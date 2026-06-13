@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/ASUS/Documents/dicoding/files/Workflow-CI/MLProject/mlruns/0/ca12f89bfa9844eab11cd26ef5e0ca1f/artifacts
+end_time: 1781285335951
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: ca12f89bfa9844eab11cd26ef5e0ca1f
+run_name: calm-midge-101
+run_uuid: ca12f89bfa9844eab11cd26ef5e0ca1f
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1781285321701
+status: 3
+tags: []
+user_id: ASUS

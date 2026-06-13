@@ -1,0 +1,15 @@
+artifact_uri: file:///C:/Users/ASUS/Documents/dicoding/files/Workflow-CI/MLProject/mlruns/0/cadef1c3e1f2409fa4ac0b78893cab1f/artifacts
+end_time: 1781284889766
+entry_point_name: ''
+experiment_id: '0'
+lifecycle_stage: active
+run_id: cadef1c3e1f2409fa4ac0b78893cab1f
+run_name: abrasive-pug-369
+run_uuid: cadef1c3e1f2409fa4ac0b78893cab1f
+source_name: ''
+source_type: 4
+source_version: ''
+start_time: 1781284880599
+status: 4
+tags: []
+user_id: ASUS
