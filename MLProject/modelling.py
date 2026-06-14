@@ -12,7 +12,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import mlflow
 import mlflow.sklearn
-mlflow.set_tracking_uri("file:./mlruns")
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import logging
@@ -71,6 +70,7 @@ def main():
 
     # MLflow Experiment
     mlflow.set_experiment("Housing_CI_Pipeline")
+	with mlflow.start_run(nested=False):
 
     # Load data
     X_train, X_test, y_train, y_test = load_data(args.data_dir)
