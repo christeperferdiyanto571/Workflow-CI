@@ -12,7 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import mlflow
 import mlflow.sklearn
-mlflow.set_tracking_uri("file:///home/asus/mlruns")
+mlflow.set_tracking_uri(f"file:{os.getcwd()}/mlruns")
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import logging
