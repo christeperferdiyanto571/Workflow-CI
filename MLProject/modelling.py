@@ -1,7 +1,10 @@
 """
-modelling.py (MLProject version)
-Digunakan dalam workflow CI via mlflow run.
-Mendukung argumen CLI untuk hyperparameter.
+modelling.py (MLProject version - CLEAN FIXED)
+- Compatible with MLflow Projects
+- FIXED: no conda issue
+- FIXED: no /C: path issue
+- FIXED: no save_model conflict
+- FIXED: proper MLflow logging
 """
 
 import argparse
@@ -16,12 +19,20 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import logging
 
+# ==========================
+# FIX ENV ISSUE (IMPORTANT)
+# ==========================
+os.environ["MLFLOW_TRACKING_URI"] = "file:./mlruns"
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 
+# ==========================
+# ARGUMENT PARSER
+# ==========================
 def parse_args():
-    parser = argparse.ArgumentParser(description="Train Housing Price Prediction Model")
+    parser = argparse.ArgumentParser()
     parser.add_argument('--n_estimators', type=int, default=100)
     parser.add_argument('--max_depth', type=int, default=10)
     parser.add_argument('--min_samples_split', type=int, default=2)
@@ -30,6 +41,9 @@ def parse_args():
     return parser.parse_args()
 
 
+# ==========================
+# LOAD DATA
+# ==========================
 def load_data(data_dir):
     train_df = pd.read_csv(os.path.join(data_dir, "train.csv"))
     test_df = pd.read_csv(os.path.join(data_dir, "test.csv"))
@@ -42,22 +56,28 @@ def load_data(data_dir):
     return X_train, X_test, y_train, y_test
 
 
+# ==========================
+# PLOT FEATURE IMPORTANCE
+# ==========================
 def save_feature_importance_plot(model, feature_names, path="feature_importance.png"):
     importances = model.feature_importances_
     indices = np.argsort(importances)[::-1]
 
     plt.figure(figsize=(10, 6))
     plt.bar(range(len(importances)), importances[indices])
-    plt.xticks(range(len(importances)), [feature_names[i] for i in indices],
+    plt.xticks(range(len(importances)),
+               [feature_names[i] for i in indices],
                rotation=45, ha='right')
-    plt.title("Feature Importances")
+    plt.title("Feature Importance")
     plt.tight_layout()
-    plt.savefig(path, dpi=150, bbox_inches='tight')
+    plt.savefig(path)
     plt.close()
-
     return path
 
 
+# ==========================
+# PLOT PREDICTION
+# ==========================
 def save_prediction_plot(y_test, y_pred, path="prediction_vs_actual.png"):
     plt.figure(figsize=(8, 6))
     plt.scatter(y_test, y_pred, alpha=0.4, s=10)
@@ -65,17 +85,19 @@ def save_prediction_plot(y_test, y_pred, path="prediction_vs_actual.png"):
     m = min(y_test.min(), y_pred.min())
     M = max(y_test.max(), y_pred.max())
 
-    plt.plot([m, M], [m, M], 'r--', lw=2)
+    plt.plot([m, M], [m, M], 'r--')
     plt.xlabel("Actual")
     plt.ylabel("Predicted")
     plt.title("Prediction vs Actual")
     plt.tight_layout()
-    plt.savefig(path, dpi=150, bbox_inches='tight')
+    plt.savefig(path)
     plt.close()
-
     return path
 
 
+# ==========================
+# MAIN
+# ==========================
 def main():
     args = parse_args()
 
@@ -105,7 +127,7 @@ def main():
     model.fit(X_train, y_train)
 
     # ==========================
-    # PREDICTION
+    # PREDICT
     # ==========================
     y_pred = model.predict(X_test)
 
@@ -118,7 +140,7 @@ def main():
     r2 = r2_score(y_test, y_pred)
 
     # ==========================
-    # MLflow LOGGING (IMPORTANT)
+    # MLflow LOGGING (ONLY THIS IS CORRECT)
     # ==========================
     mlflow.log_params(params)
     mlflow.log_metric("mse", mse)
@@ -126,19 +148,16 @@ def main():
     mlflow.log_metric("mae", mae)
     mlflow.log_metric("r2", r2)
 
-    # ==========================
-    # LOG MODEL
-    # ==========================
-    mlflow.sklearn.log_model(model, artifact_path="model")
+    mlflow.sklearn.log_model(model, name="model")
 
     # ==========================
     # ARTIFACTS
     # ==========================
     fi_path = save_feature_importance_plot(model, list(X_train.columns))
-    mlflow.log_artifact(fi_path, artifact_path="plots")
+    mlflow.log_artifact(fi_path)
 
     pred_path = save_prediction_plot(y_test, y_pred)
-    mlflow.log_artifact(pred_path, artifact_path="plots")
+    mlflow.log_artifact(pred_path)
 
     params_path = "run_params.json"
     with open(params_path, "w") as f:
@@ -147,25 +166,25 @@ def main():
     mlflow.log_artifact(params_path)
 
     # ==========================
-    # LOCAL SAVE (optional)
+    # LOCAL SAVE (SAFE VERSION)
     # ==========================
     os.makedirs("artifacts", exist_ok=True)
-    mlflow.sklearn.save_model(model, "artifacts/model")
+
+    # NOTE: no mlflow.sklearn.save_model (REMOVED to avoid /C: + overwrite error)
 
     # ==========================
-    # LOG OUTPUT
+    # OUTPUT
     # ==========================
-    logger.info(f"MSE  : {mse:.4f}")
-    logger.info(f"RMSE : {rmse:.4f}")
-    logger.info(f"MAE  : {mae:.4f}")
-    logger.info(f"R2   : {r2:.4f}")
+    logger.info(f"MSE : {mse:.4f}")
+    logger.info(f"RMSE: {rmse:.4f}")
+    logger.info(f"MAE : {mae:.4f}")
+    logger.info(f"R2  : {r2:.4f}")
 
-    print("\n=== Training Completed ===")
+    print("\n=== TRAINING DONE ===")
     print(f"MSE  : {mse:.4f}")
     print(f"RMSE : {rmse:.4f}")
     print(f"MAE  : {mae:.4f}")
     print(f"R2   : {r2:.4f}")
-    print("Artifacts saved to: artifacts/")
 
 
 if __name__ == "__main__":
