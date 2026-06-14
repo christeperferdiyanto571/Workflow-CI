@@ -171,3 +171,6 @@ def main():
     print(f"MAE  : {mae:.4f}")
     print(f"R2   : {r2:.4f}")
     print("Artifacts saved to: artifacts/")
+
+    if __name__ == "__main__":
+    	main()
