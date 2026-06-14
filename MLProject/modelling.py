@@ -70,7 +70,7 @@ def main():
 
     # MLflow Experiment
     mlflow.set_experiment("Housing_CI_Pipeline")
-	with mlflow.start_run(nested=False):
+    with mlflow.start_run(nested=False):
 
     # Load data
     X_train, X_test, y_train, y_test = load_data(args.data_dir)
