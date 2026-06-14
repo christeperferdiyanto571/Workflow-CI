@@ -21,7 +21,7 @@ entry_points:
 
       data_dir:
         type: str
-        default: "housing_preprocessing"
+        default: housing_preprocessing
 
     command: >
       python modelling.py
