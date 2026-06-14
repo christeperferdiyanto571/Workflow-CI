@@ -1,9 +1,11 @@
+import os
+import argparse
 import mlflow
 import mlflow.sklearn
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import numpy as np
-import argparse
+import pandas as pd
 
 def main():
 
@@ -20,14 +22,14 @@ def main():
         "n_estimators": args.n_estimators,
         "max_depth": args.max_depth,
         "min_samples_split": args.min_samples_split,
-        "min_samples_leaf": args.min_samples_leaf
+        "min_samples_leaf": args.min_samples_leaf,
     }
 
-    # contoh data dummy (ganti sesuai dataset kamu)
-    X_train = np.random.rand(100, 5)
-    y_train = np.random.rand(100)
-    X_test = np.random.rand(20, 5)
-    y_test = np.random.rand(20)
+    # contoh load data (sesuaikan punyamu)
+    data = pd.read_csv(f"{args.data_dir}/data.csv")
+
+    X = data.drop("target", axis=1)
+    y = data["target"]
 
     model = RandomForestRegressor(
         n_estimators=args.n_estimators,
@@ -37,39 +39,40 @@ def main():
         random_state=42
     )
 
-    # 🔥 INI FIX UTAMA
-    with mlflow.start_run():
+    mlflow.start_run()
 
-        print("Training RandomForestRegressor...")
+    print("Training RandomForestRegressor...")
+    model.fit(X, y)
 
-        model.fit(X_train, y_train)
-        preds = model.predict(X_test)
+    preds = model.predict(X)
 
-        mse = mean_squared_error(y_test, preds)
-        rmse = np.sqrt(mse)
-        mae = mean_absolute_error(y_test, preds)
-        r2 = r2_score(y_test, preds)
+    mse = mean_squared_error(y, preds)
+    rmse = np.sqrt(mse)
+    mae = mean_absolute_error(y, preds)
+    r2 = r2_score(y, preds)
 
-        # log parameter
-        mlflow.log_params(params)
+    # log params
+    mlflow.log_params(params)
 
-        # log metrics
-        mlflow.log_metrics({
-            "mse": mse,
-            "rmse": rmse,
-            "mae": mae,
-            "r2": r2
-        })
+    # log metrics
+    mlflow.log_metric("mse", mse)
+    mlflow.log_metric("rmse", rmse)
+    mlflow.log_metric("mae", mae)
+    mlflow.log_metric("r2", r2)
 
-        # log model
-        mlflow.sklearn.log_model(model, artifact_path="model")
+    # ✅ INI YANG BENAR (FIX ERROR KAMU SEBELUMNYA)
+    mlflow.sklearn.log_model(
+        sk_model=model,
+        artifact_path="model"
+    )
 
-        print("\n=== TRAINING DONE ===")
-        print(f"MSE  : {mse:.4f}")
-        print(f"RMSE : {rmse:.4f}")
-        print(f"MAE  : {mae:.4f}")
-        print(f"R2   : {r2:.4f}")
+    print("\n=== TRAINING DONE ===")
+    print(f"MSE  : {mse:.4f}")
+    print(f"RMSE : {rmse:.4f}")
+    print(f"MAE  : {mae:.4f}")
+    print(f"R2   : {r2:.4f}")
 
+    mlflow.end_run()
 
 if __name__ == "__main__":
     main()
