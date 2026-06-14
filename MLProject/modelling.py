@@ -62,7 +62,7 @@ def main():
         })
 
         # log model
-        mlflow.sklearn.log_model(model, name="model")
+        mlflow.sklearn.log_model(model, artifact_path="model")
 
         print("\n=== TRAINING DONE ===")
         print(f"MSE  : {mse:.4f}")
