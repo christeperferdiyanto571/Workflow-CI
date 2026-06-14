@@ -71,43 +71,42 @@ def main():
     # MLflow Experiment
     mlflow.set_experiment("Housing_CI_Pipeline")
     with mlflow.start_run(nested=False):
+        # Load data
+        X_train, X_test, y_train, y_test = load_data(args.data_dir)
 
-    # Load data
-    X_train, X_test, y_train, y_test = load_data(args.data_dir)
+        params = {
+            'n_estimators': args.n_estimators,
+            'max_depth': args.max_depth,
+            'min_samples_split': args.min_samples_split,
+            'min_samples_leaf': args.min_samples_leaf,
+            'random_state': 42,
+            'n_jobs': -1,
+        }
 
-    params = {
-        'n_estimators': args.n_estimators,
-        'max_depth': args.max_depth,
-        'min_samples_split': args.min_samples_split,
-        'min_samples_leaf': args.min_samples_leaf,
-        'random_state': 42,
-        'n_jobs': -1,
-    }
+        logger.info("Training RandomForestRegressor...")
 
-    logger.info("Training RandomForestRegressor...")
+        # Train Model
+        model = RandomForestRegressor(**params)
+        model.fit(X_train, y_train)
 
-    # Train Model
-    model = RandomForestRegressor(**params)
-    model.fit(X_train, y_train)
+        # Prediction
+        y_pred = model.predict(X_test)
 
-    # Prediction
-    y_pred = model.predict(X_test)
+        # Metrics
+        mse = mean_squared_error(y_test, y_pred)
+        rmse = np.sqrt(mse)
+        mae = mean_absolute_error(y_test, y_pred)
+        r2 = r2_score(y_test, y_pred)
 
-    # Metrics
-    mse = mean_squared_error(y_test, y_pred)
-    rmse = np.sqrt(mse)
-    mae = mean_absolute_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
+        # ==========================
+        # Manual MLflow Logging
+        # ==========================
+        mlflow.log_params(params)
 
-    # ==========================
-    # Manual MLflow Logging
-    # ==========================
-    mlflow.log_params(params)
-
-    mlflow.log_metric("mse", mse)
-    mlflow.log_metric("rmse", rmse)
-    mlflow.log_metric("mae", mae)
-    mlflow.log_metric("r2", r2)
+        mlflow.log_metric("mse", mse)
+        mlflow.log_metric("rmse", rmse)
+        mlflow.log_metric("mae", mae)
+        mlflow.log_metric("r2", r2)
 
     # Log Model
     mlflow.sklearn.log_model(
