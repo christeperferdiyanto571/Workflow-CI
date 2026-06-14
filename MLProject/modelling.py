@@ -12,6 +12,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import mlflow
 import mlflow.sklearn
+mlflow.set_tracking_uri("file:///home/asus/mlruns")
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import logging
@@ -172,5 +173,5 @@ def main():
     print(f"R2   : {r2:.4f}")
     print("Artifacts saved to: artifacts/")
 
-    if __name__ == "__main__":
-    	main()
+if __name__ == "__main__":
+   main()

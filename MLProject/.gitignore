@@ -1,0 +1,18 @@
+# ML artifacts
+artifacts/
+mlruns/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Output gambar
+*.png
+
+# Temp / save file
+*.save
+run_params.json
+
+# Environment (kalau ada)
+.env
+.venv/
