@@ -3,27 +3,34 @@ import os
 import json
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
 import mlflow
 import mlflow.sklearn
+
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
 import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
+# =========================
+# ARGUMENT
+# =========================
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--n_estimators', type=int, default=100)
-    parser.add_argument('--max_depth', type=int, default=10)
-    parser.add_argument('--min_samples_split', type=int, default=2)
-    parser.add_argument('--min_samples_leaf', type=int, default=1)
-    parser.add_argument('--data_dir', type=str, default="housing_preprocessing")
+    parser.add_argument("--n_estimators", type=int, default=100)
+    parser.add_argument("--max_depth", type=int, default=10)
+    parser.add_argument("--min_samples_split", type=int, default=2)
+    parser.add_argument("--min_samples_leaf", type=int, default=1)
+    parser.add_argument("--data_dir", type=str, default="housing_preprocessing")
     return parser.parse_args()
 
 
+# =========================
+# LOAD DATA (FIX PATH)
+# =========================
 def load_data(data_dir):
     train_path = os.path.join(data_dir, "train.csv")
     test_path = os.path.join(data_dir, "test.csv")
@@ -40,10 +47,11 @@ def load_data(data_dir):
     return X_train, X_test, y_train, y_test
 
 
+# =========================
+# MAIN
+# =========================
 def main():
     args = parse_args()
-
-    mlflow.set_experiment("Housing_CI_Pipeline")
 
     X_train, X_test, y_train, y_test = load_data(args.data_dir)
 
@@ -68,28 +76,32 @@ def main():
     mae = mean_absolute_error(y_test, y_pred)
     r2 = r2_score(y_test, y_pred)
 
-    # ===== MLflow logging (FIXED) =====
-    mlflow.log_params(params)
+    # =========================
+    # MLflow (FIX UTAMA)
+    # =========================
+    with mlflow.start_run():
 
-    mlflow.log_metric("mse", mse)
-    mlflow.log_metric("rmse", rmse)
-    mlflow.log_metric("mae", mae)
-    mlflow.log_metric("r2", r2)
+        mlflow.log_params(params)
 
-    # ✔ FIX INI (INI YANG KEMARIN ERROR)
-    mlflow.sklearn.log_model(model, "model")
+        mlflow.log_metric("mse", mse)
+        mlflow.log_metric("rmse", rmse)
+        mlflow.log_metric("mae", mae)
+        mlflow.log_metric("r2", r2)
 
-    # ===== Save artifacts =====
-    os.makedirs("artifacts", exist_ok=True)
+        mlflow.sklearn.log_model(model, "model")
 
-    json_path = "artifacts/params.json"
-    with open(json_path, "w") as f:
-        json.dump(params, f, indent=4)
+        # simpan params lokal juga
+        os.makedirs("artifacts", exist_ok=True)
+        with open("artifacts/params.json", "w") as f:
+            json.dump(params, f, indent=4)
 
-    mlflow.log_artifact(json_path)
+        mlflow.log_artifact("artifacts/params.json")
 
-    logger.info(f"R2 Score: {r2:.4f}")
-    print("TRAINING DONE")
+    print("\n=== TRAINING DONE ===")
+    print(f"MSE : {mse:.4f}")
+    print(f"RMSE: {rmse:.4f}")
+    print(f"MAE : {mae:.4f}")
+    print(f"R2  : {r2:.4f}")
 
 
 if __name__ == "__main__":
