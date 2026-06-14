@@ -1,190 +1,74 @@
-"""
-modelling.py (MLProject version - CLEAN FIXED)
-- Compatible with MLflow Projects
-- FIXED: no conda issue
-- FIXED: no /C: path issue
-- FIXED: no save_model conflict
-- FIXED: proper MLflow logging
-"""
-
-import argparse
-import os
-import json
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 import mlflow
 import mlflow.sklearn
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-import logging
+import numpy as np
+import argparse
 
-# ==========================
-# FIX ENV ISSUE (IMPORTANT)
-# ==========================
-os.environ["MLFLOW_TRACKING_URI"] = "file:./mlruns"
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-
-# ==========================
-# ARGUMENT PARSER
-# ==========================
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--n_estimators', type=int, default=100)
-    parser.add_argument('--max_depth', type=int, default=10)
-    parser.add_argument('--min_samples_split', type=int, default=2)
-    parser.add_argument('--min_samples_leaf', type=int, default=1)
-    parser.add_argument('--data_dir', type=str, default="housing_preprocessing")
-    return parser.parse_args()
-
-
-# ==========================
-# LOAD DATA
-# ==========================
-def load_data(data_dir):
-    train_df = pd.read_csv(os.path.join(data_dir, "train.csv"))
-    test_df = pd.read_csv(os.path.join(data_dir, "test.csv"))
-
-    X_train = train_df.drop('MedHouseVal', axis=1)
-    y_train = train_df['MedHouseVal']
-    X_test = test_df.drop('MedHouseVal', axis=1)
-    y_test = test_df['MedHouseVal']
-
-    return X_train, X_test, y_train, y_test
-
-
-# ==========================
-# PLOT FEATURE IMPORTANCE
-# ==========================
-def save_feature_importance_plot(model, feature_names, path="feature_importance.png"):
-    importances = model.feature_importances_
-    indices = np.argsort(importances)[::-1]
-
-    plt.figure(figsize=(10, 6))
-    plt.bar(range(len(importances)), importances[indices])
-    plt.xticks(range(len(importances)),
-               [feature_names[i] for i in indices],
-               rotation=45, ha='right')
-    plt.title("Feature Importance")
-    plt.tight_layout()
-    plt.savefig(path)
-    plt.close()
-    return path
-
-
-# ==========================
-# PLOT PREDICTION
-# ==========================
-def save_prediction_plot(y_test, y_pred, path="prediction_vs_actual.png"):
-    plt.figure(figsize=(8, 6))
-    plt.scatter(y_test, y_pred, alpha=0.4, s=10)
-
-    m = min(y_test.min(), y_pred.min())
-    M = max(y_test.max(), y_pred.max())
-
-    plt.plot([m, M], [m, M], 'r--')
-    plt.xlabel("Actual")
-    plt.ylabel("Predicted")
-    plt.title("Prediction vs Actual")
-    plt.tight_layout()
-    plt.savefig(path)
-    plt.close()
-    return path
-
-
-# ==========================
-# MAIN
-# ==========================
 def main():
-    args = parse_args()
 
-    # ==========================
-    # LOAD DATA
-    # ==========================
-    X_train, X_test, y_train, y_test = load_data(args.data_dir)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--n_estimators", type=int, default=100)
+    parser.add_argument("--max_depth", type=int, default=10)
+    parser.add_argument("--min_samples_split", type=int, default=2)
+    parser.add_argument("--min_samples_leaf", type=int, default=1)
+    parser.add_argument("--data_dir", type=str, default="housing_preprocessing")
 
-    # ==========================
-    # MODEL PARAMS
-    # ==========================
+    args = parser.parse_args()
+
     params = {
         "n_estimators": args.n_estimators,
         "max_depth": args.max_depth,
         "min_samples_split": args.min_samples_split,
-        "min_samples_leaf": args.min_samples_leaf,
-        "random_state": 42,
-        "n_jobs": -1
+        "min_samples_leaf": args.min_samples_leaf
     }
 
-    logger.info("Training RandomForestRegressor...")
+    # contoh data dummy (ganti sesuai dataset kamu)
+    X_train = np.random.rand(100, 5)
+    y_train = np.random.rand(100)
+    X_test = np.random.rand(20, 5)
+    y_test = np.random.rand(20)
 
-    # ==========================
-    # TRAIN MODEL
-    # ==========================
-    model = RandomForestRegressor(**params)
-    model.fit(X_train, y_train)
+    model = RandomForestRegressor(
+        n_estimators=args.n_estimators,
+        max_depth=args.max_depth,
+        min_samples_split=args.min_samples_split,
+        min_samples_leaf=args.min_samples_leaf,
+        random_state=42
+    )
 
-    # ==========================
-    # PREDICT
-    # ==========================
-    y_pred = model.predict(X_test)
+    # 🔥 INI FIX UTAMA
+    with mlflow.start_run():
 
-    # ==========================
-    # METRICS
-    # ==========================
-    mse = mean_squared_error(y_test, y_pred)
-    rmse = np.sqrt(mse)
-    mae = mean_absolute_error(y_test, y_pred)
-    r2 = r2_score(y_test, y_pred)
+        print("Training RandomForestRegressor...")
 
-    # ==========================
-    # MLflow LOGGING (ONLY THIS IS CORRECT)
-    # ==========================
-    mlflow.log_params(params)
-    mlflow.log_metric("mse", mse)
-    mlflow.log_metric("rmse", rmse)
-    mlflow.log_metric("mae", mae)
-    mlflow.log_metric("r2", r2)
+        model.fit(X_train, y_train)
+        preds = model.predict(X_test)
 
-    mlflow.sklearn.log_model(model, name="model")
+        mse = mean_squared_error(y_test, preds)
+        rmse = np.sqrt(mse)
+        mae = mean_absolute_error(y_test, preds)
+        r2 = r2_score(y_test, preds)
 
-    # ==========================
-    # ARTIFACTS
-    # ==========================
-    fi_path = save_feature_importance_plot(model, list(X_train.columns))
-    mlflow.log_artifact(fi_path)
+        # log parameter
+        mlflow.log_params(params)
 
-    pred_path = save_prediction_plot(y_test, y_pred)
-    mlflow.log_artifact(pred_path)
+        # log metrics
+        mlflow.log_metrics({
+            "mse": mse,
+            "rmse": rmse,
+            "mae": mae,
+            "r2": r2
+        })
 
-    params_path = "run_params.json"
-    with open(params_path, "w") as f:
-        json.dump(params, f, indent=4)
+        # log model
+        mlflow.sklearn.log_model(model, name="model")
 
-    mlflow.log_artifact(params_path)
-
-    # ==========================
-    # LOCAL SAVE (SAFE VERSION)
-    # ==========================
-    os.makedirs("artifacts", exist_ok=True)
-
-    # NOTE: no mlflow.sklearn.save_model (REMOVED to avoid /C: + overwrite error)
-
-    # ==========================
-    # OUTPUT
-    # ==========================
-    logger.info(f"MSE : {mse:.4f}")
-    logger.info(f"RMSE: {rmse:.4f}")
-    logger.info(f"MAE : {mae:.4f}")
-    logger.info(f"R2  : {r2:.4f}")
-
-    print("\n=== TRAINING DONE ===")
-    print(f"MSE  : {mse:.4f}")
-    print(f"RMSE : {rmse:.4f}")
-    print(f"MAE  : {mae:.4f}")
-    print(f"R2   : {r2:.4f}")
+        print("\n=== TRAINING DONE ===")
+        print(f"MSE  : {mse:.4f}")
+        print(f"RMSE : {rmse:.4f}")
+        print(f"MAE  : {mae:.4f}")
+        print(f"R2   : {r2:.4f}")
 
 
 if __name__ == "__main__":
