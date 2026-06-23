@@ -102,9 +102,6 @@ jobs:
         name: mlflow-model-artifacts
         path: |
           MLProject/artifacts/
-          MLProject/feature_importance.png
-          MLProject/prediction_vs_actual.png
-          MLProject/run_params.json
         retention-days: 90
 
     # -------------------------------------------------------
@@ -118,8 +115,6 @@ jobs:
         git config --local user.name "CI Bot"
         mkdir -p saved_artifacts
         cp -r MLProject/artifacts/ saved_artifacts/ 2>/dev/null || true
-        cp MLProject/feature_importance.png saved_artifacts/ 2>/dev/null || true
-        cp MLProject/prediction_vs_actual.png saved_artifacts/ 2>/dev/null || true
         git add saved_artifacts/ || true
         git diff --staged --quiet || git commit -m "CI: Save model artifacts [$(date +'%Y-%m-%d %H:%M:%S')]"
         git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main || true
@@ -132,4 +127,4 @@ jobs:
         echo "✅ Workflow Complete!"
         echo "📊 Model saved to: MLProject/artifacts/model"
         echo "📈 Artifacts uploaded to GitHub Actions"
-        echo "💾 Artifacts committed to repo in saved_artifacts/"
+        echo "💾 Artifacts committed to repo"
