@@ -26,7 +26,7 @@ jobs:
     # -------------------------------------------------------
     # 2. Setup Python
     # -------------------------------------------------------
-    - name: Set up Python 3.12
+    - name: Set up Python 3.12.7
       uses: actions/setup-python@v5
       with:
         python-version: '3.12.7'
@@ -77,7 +77,7 @@ jobs:
         test_df  = X_test.copy();  test_df['MedHouseVal']  = y_test.values
         train_df.to_csv('MLProject/housing_preprocessing/train.csv', index=False)
         test_df.to_csv('MLProject/housing_preprocessing/test.csv', index=False)
-        print('Dataset prepared successfully')
+        print('✅ Dataset prepared successfully')
         "
 
     # -------------------------------------------------------
@@ -125,36 +125,11 @@ jobs:
         git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main || true
 
     # -------------------------------------------------------
-    # 8. Build & Push Docker Image (Python 3.12.7)
+    # 8. Print Summary
     # -------------------------------------------------------
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-    - name: Check if Model Exists
-      id: model_check
+    - name: Print Summary
       run: |
-        if [ -d "MLProject/artifacts/model" ]; then
-          echo "model_exists=true" >> $GITHUB_OUTPUT
-          echo "✅ Model artifact found"
-        else
-          echo "model_exists=false" >> $GITHUB_OUTPUT
-          echo "⚠️ Model artifact not found, skipping Docker build"
-        fi
-
-    - name: Build Docker Image (Python 3.12.7)
-      if: steps.model_check.outputs.model_exists == 'true'
-      run: |
-        docker build -t "${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest" .
-        echo "✅ Docker image built successfully"
-
-    - name: Push Docker Image to Docker Hub
-      if: steps.model_check.outputs.model_exists == 'true'
-      run: |
-        docker push "${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
-        echo "✅ Docker image pushed: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
+        echo "✅ Workflow Complete!"
+        echo "📊 Model saved to: MLProject/artifacts/model"
+        echo "📈 Artifacts uploaded to GitHub Actions"
+        echo "💾 Artifacts committed to repo in saved_artifacts/"
