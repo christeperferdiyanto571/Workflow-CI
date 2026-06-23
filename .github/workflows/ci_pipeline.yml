@@ -26,7 +26,7 @@ jobs:
     # -------------------------------------------------------
     # 2. Setup Python
     # -------------------------------------------------------
-    - name: Set up Python 3.12
+    - name: Set up Python 3.12.7
       uses: actions/setup-python@v5
       with:
         python-version: '3.12.7'
@@ -43,7 +43,7 @@ jobs:
                     dagshub==0.3.35
 
     # -------------------------------------------------------
-    # 4. Prepare preprocessed dataset (generate jika belum ada)
+    # 4. Prepare preprocessed dataset
     # -------------------------------------------------------
     - name: Prepare Dataset
       run: |
@@ -77,7 +77,7 @@ jobs:
         test_df  = X_test.copy();  test_df['MedHouseVal']  = y_test.values
         train_df.to_csv('MLProject/housing_preprocessing/train.csv', index=False)
         test_df.to_csv('MLProject/housing_preprocessing/test.csv', index=False)
-        print('Dataset prepared successfully')
+        print('✅ Dataset prepared successfully')
         "
 
     # -------------------------------------------------------
@@ -102,47 +102,29 @@ jobs:
         name: mlflow-model-artifacts
         path: |
           MLProject/artifacts/
-          MLProject/feature_importance.png
-          MLProject/prediction_vs_actual.png
-          MLProject/run_params.json
         retention-days: 90
 
     # -------------------------------------------------------
-    # 7. Commit artifacts back to repo (skilled+)
+    # 7. Commit artifacts back to repo
     # -------------------------------------------------------
     - name: Commit Artifacts to Repository
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         git config --local user.email "ci-bot@github.com"
         git config --local user.name "CI Bot"
         mkdir -p saved_artifacts
         cp -r MLProject/artifacts/ saved_artifacts/ 2>/dev/null || true
-        cp MLProject/feature_importance.png saved_artifacts/ 2>/dev/null || true
-        cp MLProject/prediction_vs_actual.png saved_artifacts/ 2>/dev/null || true
         git add saved_artifacts/ || true
         git diff --staged --quiet || git commit -m "CI: Save model artifacts [$(date +'%Y-%m-%d %H:%M:%S')]"
-        git push || true
+        git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main || true
 
     # -------------------------------------------------------
-    # 8. Build & Push Docker Image (advanced)
+    # 8. Print Summary
     # -------------------------------------------------------
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Login to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ secrets.DOCKERHUB_USERNAME }}
-        password: ${{ secrets.DOCKERHUB_TOKEN }}
-
-    - name: Build Docker Image with MLflow
+    - name: Print Summary
       run: |
-        cd MLProject
-        mlflow models build-docker \
-          -m "artifacts/model" \
-          -n "${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}" \
-          --enable-mlserver
-
-    - name: Push Docker Image to Docker Hub
-      run: |
-        docker push "${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
-        echo "Docker image pushed: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
+        echo "✅ Workflow Complete!"
+        echo "📊 Model saved to: MLProject/artifacts/model"
+        echo "📈 Artifacts uploaded to GitHub Actions"
+        echo "💾 Artifacts committed to repo"
