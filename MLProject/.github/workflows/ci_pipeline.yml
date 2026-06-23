@@ -43,7 +43,7 @@ jobs:
                     dagshub==0.3.35
 
     # -------------------------------------------------------
-    # 4. Prepare preprocessed dataset (generate jika belum ada)
+    # 4. Prepare preprocessed dataset
     # -------------------------------------------------------
     - name: Prepare Dataset
       run: |
@@ -108,7 +108,7 @@ jobs:
         retention-days: 90
 
     # -------------------------------------------------------
-    # 7. Commit artifacts back to repo (FIXED)
+    # 7. Commit artifacts back to repo
     # -------------------------------------------------------
     - name: Commit Artifacts to Repository
       env:
@@ -125,7 +125,7 @@ jobs:
         git push https://x-access-token:${GITHUB_TOKEN}@github.com/${{ github.repository }}.git HEAD:main || true
 
     # -------------------------------------------------------
-    # 8. Build & Push Docker Image (FIXED with check)
+    # 8. Build & Push Docker Image (Python 3.12.7)
     # -------------------------------------------------------
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
@@ -139,7 +139,7 @@ jobs:
     - name: Check if Model Exists
       id: model_check
       run: |
-        if [ -d "MLProject/artifacts/model" ] || [ -f "MLProject/artifacts/model" ]; then
+        if [ -d "MLProject/artifacts/model" ]; then
           echo "model_exists=true" >> $GITHUB_OUTPUT
           echo "✅ Model artifact found"
         else
@@ -147,17 +147,14 @@ jobs:
           echo "⚠️ Model artifact not found, skipping Docker build"
         fi
 
-    - name: Build Docker Image with MLflow
+    - name: Build Docker Image (Python 3.12.7)
       if: steps.model_check.outputs.model_exists == 'true'
       run: |
-        cd MLProject
-        mlflow models build-docker \
-          -m "artifacts/model" \
-          -n "${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}" \
-          --enable-mlserver
+        docker build -t "${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest" .
+        echo "✅ Docker image built successfully"
 
     - name: Push Docker Image to Docker Hub
       if: steps.model_check.outputs.model_exists == 'true'
       run: |
         docker push "${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
-        echo "Docker image pushed: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
+        echo "✅ Docker image pushed: ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
