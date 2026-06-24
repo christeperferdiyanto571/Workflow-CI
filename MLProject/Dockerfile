@@ -1,10 +1,23 @@
-FROM python:3.10-slim
+FROM python:3.12.7-slim
 
 WORKDIR /app
 
-COPY . .
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN pip install --upgrade pip
-RUN pip install mlflow scikit-learn pandas numpy matplotlib
+# Copy requirements
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
-CMD ["python", "modelling.py"]
+# Copy model dan kode
+COPY MLProject/artifacts/model ./model
+COPY MLProject/modelling.py .
+
+# Expose port untuk MLflow serving
+EXPOSE 5000
+
+# Command untuk run model serving
+CMD ["mlflow", "models", "serve", "-m", "model", "--host", "0.0.0.0", "--port", "5000"]
